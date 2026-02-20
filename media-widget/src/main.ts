@@ -20,7 +20,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   const stopBtn = document.querySelector('button[aria-label="Stop"]') as HTMLElement | null;
   const prevBtn = document.querySelector('button[aria-label="Skip Back"]') as HTMLElement | null;
   const rewindBtn = document.querySelector('button[aria-label="Rewind"]') as HTMLElement | null;
-
+  const fastForwardBtn = document.querySelector('button[aria-label="Fast Forward"]') as HTMLElement | null;
 
   minimizeBtn?.addEventListener("click", async (e) => {
     e.stopPropagation();
@@ -116,6 +116,23 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             invoke('rewind_media').catch(err => console.error("[TS ERROR] Fallo IPC (Rewind):", err));
             
+            setTimeout(() => {
+                isCommandPending = false;
+                updateMedia(); 
+            }, 500);
+        });
+    }
+
+    if (fastForwardBtn) {
+        fastForwardBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            if (isCommandPending) return;
+            isCommandPending = true;
+
+            invoke('fast_forward_media').catch(err => console.error("[TS ERROR] Fallo IPC (Fast Forward):", err));
+            
+            // 500ms para que Windows procese el salto y la UI reciba la nueva posición del progreso
             setTimeout(() => {
                 isCommandPending = false;
                 updateMedia(); 

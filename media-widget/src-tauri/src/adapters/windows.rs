@@ -270,4 +270,42 @@ impl WindowsAdapter {
         Ok(())
     }
 
+    pub fn fast_forward(&self) -> Result<(), String> {
+        let manager = Self::get_manager().map_err(|e| format!("Manager error: {:?}", e))?;
+        
+        let session = match manager.GetCurrentSession() {
+            Ok(s) => s,
+            Err(_) => return Ok(()), 
+        };
+
+        let timeline = match session.GetTimelineProperties() {
+            Ok(t) => t,
+            Err(_) => return Ok(()),
+        };
+
+        let position = match timeline.Position() {
+            Ok(p) => p.Duration,
+            Err(_) => return Ok(()),
+        };
+
+        let end = match timeline.EndTime() {
+            Ok(e) => e.Duration,
+            Err(_) => return Ok(()), 
+        };
+
+        let ten_seconds_ticks: i64 = 100_000_000;
+        
+        let new_position = if position + ten_seconds_ticks > end {
+            end 
+        } else {
+            position + ten_seconds_ticks
+        };
+
+        if let Ok(async_op) = session.TryChangePlaybackPositionAsync(new_position) {
+            let _ = async_op.get(); 
+        }
+
+        Ok(())
+    }
+
 }
