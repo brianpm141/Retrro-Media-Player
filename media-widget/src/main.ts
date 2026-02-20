@@ -3,19 +3,21 @@ import { invoke } from "@tauri-apps/api/core";
 
 let lastTitle: string | null = null;
 let lastArtwork: string | null = null;
-
 let isPlaying = false;
 let durationMs = 0;
-
-// Variables clave para el tiempo
 let playbackStartTime = 0; 
 let playbackOffset = 0; 
+
+let isCommandPending = false;
 
 window.addEventListener("DOMContentLoaded", async () => {
   const win = await getCurrentWindow();
 
   const minimizeBtn = document.getElementById("minimize");
   const closeBtn = document.getElementById("close");
+  const playBtn = document.querySelector('button[aria-label="Play"]') as HTMLElement | null;
+  const pauseBtn = document.querySelector('button[aria-label="Pause"]') as HTMLElement | null;
+  const stopBtn = document.querySelector('button[aria-label="Stop"]') as HTMLElement | null;
 
   minimizeBtn?.addEventListener("click", async (e) => {
     e.stopPropagation();
@@ -27,12 +29,68 @@ window.addEventListener("DOMContentLoaded", async () => {
     await win.close();
   });
 
-  // El polling de 1s está bien para sincronizar, la animación correrá a 60fps
   setInterval(updateMedia, 1000);
   requestAnimationFrame(animateSeek);
+
+  if (playBtn) {
+        playBtn.addEventListener('click', (e) => {
+            e.preventDefault(); 
+            
+            if (isCommandPending) return;
+
+            isCommandPending = true;
+            isPlaying = true; 
+            playbackStartTime = Date.now(); 
+
+            invoke('play_media').catch(err => console.error("[TS ERROR] Fallo IPC:", err));
+            
+            setTimeout(() => {
+                isCommandPending = false;
+                updateMedia();
+            }, 500); 
+        });
+    }
+
+    if (pauseBtn) {
+        pauseBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (isCommandPending) return;
+
+            isCommandPending = true;
+            isPlaying = false;
+            playbackOffset += (Date.now() - playbackStartTime); 
+
+            invoke('pause_media').catch(err => console.error("[TS ERROR] Fallo IPC:", err));
+            
+            setTimeout(() => {
+                isCommandPending = false;
+                updateMedia();
+            }, 500);
+        });
+    }
+
+    if (stopBtn) {
+        stopBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (isCommandPending) return;
+
+            isCommandPending = true;
+            isPlaying = false;
+            playbackOffset += (Date.now() - playbackStartTime);
+
+            invoke('pause_media').catch(err => console.error("[TS ERROR] Fallo IPC:", err));
+            
+            setTimeout(() => {
+                isCommandPending = false;
+                updateMedia();
+            }, 500);
+        });
+    }
 });
 
 async function updateMedia() {
+  if (isCommandPending) return;
+
   try {
     const state: any = await invoke("get_media_state");
 
@@ -93,10 +151,8 @@ function animateSeek() {
   const fill = document.querySelector(".seek-fill") as HTMLElement | null;
 
   if (track && thumb && fill && durationMs > 0) {
-    // Tomamos la base (offset)
     let currentPosition = playbackOffset;
 
-    // Si está reproduciendo, le sumamos el tiempo transcurrido desde la última sincronización
     if (isPlaying) {
       currentPosition += (Date.now() - playbackStartTime);
     }

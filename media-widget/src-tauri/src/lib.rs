@@ -24,6 +24,19 @@ fn get_artwork_only() -> Result<Option<String>, String> {
     }
 }
 
+#[tauri::command]
+async fn play_media() -> Result<(), String> {
+    // Al ser una función async en Tauri, se ejecuta en un hilo del threadpool, 
+    // por lo que el .get() bloqueante que pusimos en WindowsAdapter no congelará la UI.
+    let adapter = WindowsAdapter;
+    adapter.play()
+}
+
+#[tauri::command]
+async fn pause_media() -> Result<(), String> {
+    let adapter = WindowsAdapter;
+    adapter.pause()
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -31,7 +44,9 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             get_media_state,
-            get_artwork_only
+            get_artwork_only,
+            play_media,   
+            pause_media
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

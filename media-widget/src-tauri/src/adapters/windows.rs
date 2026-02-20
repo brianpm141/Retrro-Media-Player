@@ -2,6 +2,9 @@
 
 use windows::Storage::Streams::DataReader;
 
+const VK_MEDIA_PLAY_PAUSE: u8 = 0xB3;
+const KEYEVENTF_KEYUP: u32 = 0x0002;
+
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD as BASE64;
 
@@ -20,6 +23,11 @@ use windows::{
     },
 };
 
+#[link(name = "user32")]
+extern "system" {
+    fn keybd_event(bVk: u8, bScan: u8, dwFlags: u32, dwExtraInfo: usize);
+}
+
 pub struct WindowsAdapter;
 
 impl WindowsAdapter {
@@ -28,10 +36,8 @@ impl WindowsAdapter {
     }
 }
 
-
 impl MediaAdapter for WindowsAdapter {
     fn get_current_session(&self) -> Result<Option<MediaSession>, String> {
-
         let manager = Self::get_manager()
             .map_err(|e| format!("Manager error: {:?}", e))?;
 
@@ -85,7 +91,6 @@ impl MediaAdapter for WindowsAdapter {
             Err(_) => None,
         };
 
-
         let timeline = session
             .GetTimelineProperties()
             .map_err(|e| format!("Timeline error: {:?}", e))?;
@@ -96,7 +101,6 @@ impl MediaAdapter for WindowsAdapter {
 
         let duration = if end > start { end - start } else { 0 };
 
-
         let metadata = MediaMetadata {
             title,
             artist,
@@ -104,8 +108,6 @@ impl MediaAdapter for WindowsAdapter {
             artwork_url,
             duration_ms: Some(duration as u64 / 10_000),
             position_ms: Some((position - start) as u64 / 10_000),
-
-
         };
 
         Ok(Some(MediaSession {
@@ -164,5 +166,48 @@ impl WindowsAdapter {
         let encoded = BASE64.encode(buffer);
 
         Ok(Some(format!("data:image/png;base64,{}", encoded)))
+    }
+}
+
+impl WindowsAdapter {
+    fn toggle_media_key() {
+        unsafe {
+            keybd_event(VK_MEDIA_PLAY_PAUSE, 0, 0, 0); 
+            keybd_event(VK_MEDIA_PLAY_PAUSE, 0, KEYEVENTF_KEYUP, 0); 
+        }
+    }
+
+    pub fn play(&self) -> Result<(), String> {
+        let manager = Self::get_manager().map_err(|e| format!("{:?}", e))?;
+        let session = match manager.GetCurrentSession() {
+            Ok(s) => s,
+            Err(_) => return Ok(()),
+        };
+        
+        let playback_info = session.GetPlaybackInfo().map_err(|e| format!("{:?}", e))?;
+        let status = playback_info.PlaybackStatus().map_err(|e| format!("{:?}", e))?;
+
+        if status != GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing {
+            Self::toggle_media_key();
+        }
+
+        Ok(())
+    }
+
+    pub fn pause(&self) -> Result<(), String> {
+        let manager = Self::get_manager().map_err(|e| format!("{:?}", e))?;
+        let session = match manager.GetCurrentSession() {
+            Ok(s) => s,
+            Err(_) => return Ok(()), 
+        };
+
+        let playback_info = session.GetPlaybackInfo().map_err(|e| format!("{:?}", e))?;
+        let status = playback_info.PlaybackStatus().map_err(|e| format!("{:?}", e))?;
+
+        if status == GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing {
+            Self::toggle_media_key();
+        }
+
+        Ok(())
     }
 }
