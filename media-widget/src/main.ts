@@ -18,6 +18,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   const playBtn = document.querySelector('button[aria-label="Play"]') as HTMLElement | null;
   const pauseBtn = document.querySelector('button[aria-label="Pause"]') as HTMLElement | null;
   const stopBtn = document.querySelector('button[aria-label="Stop"]') as HTMLElement | null;
+  const prevBtn = document.querySelector('button[aria-label="Skip Back"]') as HTMLElement | null;
 
   minimizeBtn?.addEventListener("click", async (e) => {
     e.stopPropagation();
@@ -86,6 +87,24 @@ window.addEventListener("DOMContentLoaded", async () => {
             }, 500);
         });
     }
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            if (isCommandPending) return;
+
+            isCommandPending = true;
+
+            invoke('previous_media').catch(err => console.error("[TS ERROR] Fallo IPC (Previous):", err));
+            
+            setTimeout(() => {
+                isCommandPending = false;
+                updateMedia();
+            }, 500);
+        });
+    }
+
 });
 
 async function updateMedia() {
@@ -99,36 +118,27 @@ async function updateMedia() {
     const metadata = state.metadata;
     const wasPlaying = isPlaying;
     
-    // Actualizamos el estado de reproducción primero
     isPlaying = state.state === "Playing";
-
-    // === Sincronización del Tiempo (La magia ocurre aquí) ===
     
-    // 1. Calculamos dónde "cree" el frontend que está la barra actualmente
     let expectedPosition = playbackOffset;
     if (wasPlaying) {
       expectedPosition += (Date.now() - playbackStartTime);
     }
 
-    // 2. Comparamos con la posición real que dicta el sistema operativo
     const currentRealPosition = metadata.position_ms || 0;
     const diff = Math.abs(currentRealPosition - expectedPosition);
 
-    // 3. Si hay un desfase de más de 1.5 segundos (salto manual), 
-    // o si cambió el estado (Play/Pause), o si es una canción nueva: resincronizamos.
     if (diff > 1500 || isPlaying !== wasPlaying || metadata.title !== lastTitle) {
       playbackOffset = currentRealPosition;
       playbackStartTime = Date.now();
     }
 
-    // === Cambio de canción (Metadatos visuales) ===
     if (metadata.title && metadata.title !== lastTitle) {
       lastTitle = metadata.title;
       durationMs = metadata.duration_ms || 0;
       await loadArtwork();
     }
 
-    // === Actualización de Textos ===
     const showEl = document.getElementById("meta-show");
     const authorEl = document.getElementById("meta-author");
 
@@ -157,7 +167,6 @@ function animateSeek() {
       currentPosition += (Date.now() - playbackStartTime);
     }
 
-    // Evitamos que se pase del 100%
     const percent = Math.min(Math.max(currentPosition / durationMs, 0), 1);
 
     const maxWidth = track.clientWidth - thumb.clientWidth;

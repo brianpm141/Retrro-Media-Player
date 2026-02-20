@@ -38,6 +38,12 @@ async fn pause_media() -> Result<(), String> {
     adapter.pause()
 }
 
+#[tauri::command]
+async fn previous_media() -> Result<(), String> {
+    let adapter = WindowsAdapter;
+    adapter.previous()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -46,7 +52,8 @@ pub fn run() {
             get_media_state,
             get_artwork_only,
             play_media,   
-            pause_media
+            pause_media,
+            previous_media
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -4,6 +4,7 @@ use windows::Storage::Streams::DataReader;
 
 const VK_MEDIA_PLAY_PAUSE: u8 = 0xB3;
 const KEYEVENTF_KEYUP: u32 = 0x0002;
+const VK_MEDIA_PREV_TRACK: u8 = 0xB1;
 
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD as BASE64;
@@ -210,4 +211,25 @@ impl WindowsAdapter {
 
         Ok(())
     }
+
+    fn previous_media_key() {
+        unsafe {
+            keybd_event(VK_MEDIA_PREV_TRACK, 0, 0, 0); 
+            keybd_event(VK_MEDIA_PREV_TRACK, 0, KEYEVENTF_KEYUP, 0); 
+        }
+    }
+
+    pub fn previous(&self) -> Result<(), String> {
+        let manager = Self::get_manager().map_err(|e| format!("Manager error: {:?}", e))?;
+        
+        let _session = match manager.GetCurrentSession() {
+            Ok(s) => s,
+            Err(_) => return Ok(()), 
+        };
+
+        Self::previous_media_key();
+
+        Ok(())
+    }
+
 }
