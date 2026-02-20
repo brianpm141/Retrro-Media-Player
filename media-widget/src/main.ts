@@ -6,12 +6,10 @@ let lastArtwork: string | null = null;
 
 let isPlaying = false;
 let durationMs = 0;
-let lastMetadataPosition = 0;
 
-let playbackStartTime = 0;
-let playbackOffset = 0;
-let lastSyncPosition = 0;
-
+// Variables clave para el tiempo
+let playbackStartTime = 0; 
+let playbackOffset = 0; 
 
 window.addEventListener("DOMContentLoaded", async () => {
   const win = await getCurrentWindow();
@@ -29,51 +27,50 @@ window.addEventListener("DOMContentLoaded", async () => {
     await win.close();
   });
 
+  // El polling de 1s está bien para sincronizar, la animación correrá a 60fps
   setInterval(updateMedia, 1000);
   requestAnimationFrame(animateSeek);
 });
 
 async function updateMedia() {
   try {
-    
     const state: any = await invoke("get_media_state");
 
     if (!state || !state.metadata) return;
 
     const metadata = state.metadata;
+    const wasPlaying = isPlaying;
+    
+    // Actualizamos el estado de reproducción primero
+    isPlaying = state.state === "Playing";
 
-    if (lastMetadataPosition !== metadata.position_ms ) {
-      console.log("Position changed:");
-      lastMetadataPosition = metadata.position_ms;
+    // === Sincronización del Tiempo (La magia ocurre aquí) ===
+    
+    // 1. Calculamos dónde "cree" el frontend que está la barra actualmente
+    let expectedPosition = playbackOffset;
+    if (wasPlaying) {
+      expectedPosition += (Date.now() - playbackStartTime);
     }
 
-    // === Cambio de canción ===
+    // 2. Comparamos con la posición real que dicta el sistema operativo
+    const currentRealPosition = metadata.position_ms || 0;
+    const diff = Math.abs(currentRealPosition - expectedPosition);
+
+    // 3. Si hay un desfase de más de 1.5 segundos (salto manual), 
+    // o si cambió el estado (Play/Pause), o si es una canción nueva: resincronizamos.
+    if (diff > 1500 || isPlaying !== wasPlaying || metadata.title !== lastTitle) {
+      playbackOffset = currentRealPosition;
+      playbackStartTime = Date.now();
+    }
+
+    // === Cambio de canción (Metadatos visuales) ===
     if (metadata.title && metadata.title !== lastTitle) {
-      
-      console.log("Siguente cancion");
       lastTitle = metadata.title;
-      lastMetadataPosition = metadata.position_ms;
       durationMs = metadata.duration_ms || 0;
-
-
-      if (typeof metadata.position_ms === "number") {
-
-        const diff = Math.abs(metadata.position_ms - lastSyncPosition);
-
-        if (diff > 1000 || diff > -1000) { 
-          playbackOffset = metadata.position_ms;
-          playbackStartTime = Date.now();
-        }
-
-        lastSyncPosition = metadata.position_ms;
-
-      }
-
-
       await loadArtwork();
     }
 
-    // === Texto ===
+    // === Actualización de Textos ===
     const showEl = document.getElementById("meta-show");
     const authorEl = document.getElementById("meta-author");
 
@@ -84,9 +81,6 @@ async function updateMedia() {
     if (authorEl && authorEl.textContent !== metadata.artist) {
       authorEl.textContent = metadata.artist || "";
     }
-
-    // === Estado ===
-    isPlaying = state.state === "Playing";
 
   } catch (err) {
     console.error("Update error:", err);
@@ -99,14 +93,16 @@ function animateSeek() {
   const fill = document.querySelector(".seek-fill") as HTMLElement | null;
 
   if (track && thumb && fill && durationMs > 0) {
-
+    // Tomamos la base (offset)
     let currentPosition = playbackOffset;
 
+    // Si está reproduciendo, le sumamos el tiempo transcurrido desde la última sincronización
     if (isPlaying) {
-      currentPosition = Date.now() - playbackStartTime;
+      currentPosition += (Date.now() - playbackStartTime);
     }
 
-    const percent = Math.min(currentPosition / durationMs, 1);
+    // Evitamos que se pase del 100%
+    const percent = Math.min(Math.max(currentPosition / durationMs, 0), 1);
 
     const maxWidth = track.clientWidth - thumb.clientWidth;
     const offset = maxWidth * percent;
