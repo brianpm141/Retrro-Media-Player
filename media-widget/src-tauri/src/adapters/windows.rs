@@ -232,4 +232,42 @@ impl WindowsAdapter {
         Ok(())
     }
 
+    pub fn rewind(&self) -> Result<(), String> {
+        let manager = Self::get_manager().map_err(|e| format!("Manager error: {:?}", e))?;
+        
+        let session = match manager.GetCurrentSession() {
+            Ok(s) => s,
+            Err(_) => return Ok(()), // Sin sesión, salimos limpios
+        };
+
+        let timeline = match session.GetTimelineProperties() {
+            Ok(t) => t,
+            Err(_) => return Ok(()),
+        };
+
+        let position = match timeline.Position() {
+            Ok(p) => p.Duration,
+            Err(_) => return Ok(()),
+        };
+
+        let start = match timeline.StartTime() {
+            Ok(s) => s.Duration,
+            Err(_) => 0, 
+        };
+
+        let ten_seconds_ticks: i64 = 100_000_000;
+        
+        let new_position = if position - ten_seconds_ticks < start {
+            start
+        } else {
+            position - ten_seconds_ticks
+        };
+
+        if let Ok(async_op) = session.TryChangePlaybackPositionAsync(new_position) {
+            let _ = async_op.get(); 
+        }
+
+        Ok(())
+    }
+
 }
