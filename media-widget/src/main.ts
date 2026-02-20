@@ -45,11 +45,7 @@ async function updateMedia() {
     if (lastMetadataPosition !== metadata.position_ms ) {
       console.log("Position changed:");
       lastMetadataPosition = metadata.position_ms;
-      console.log("metadata:", metadata.position_ms);
     }
-
-    console.log("metadata:", metadata.position_ms);
-    console.log(lastMetadataPosition);
 
     // === Cambio de canción ===
     if (metadata.title && metadata.title !== lastTitle) {
