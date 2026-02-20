@@ -56,6 +56,12 @@ async fn fast_forward_media() -> Result<(), String> {
     adapter.fast_forward()
 }
 
+#[tauri::command]
+async fn next_media() -> Result<(), String> {
+    let adapter = WindowsAdapter;
+    adapter.next()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -67,7 +73,8 @@ pub fn run() {
             pause_media,
             previous_media,
             rewind_media,
-            fast_forward_media
+            fast_forward_media,
+            next_media
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

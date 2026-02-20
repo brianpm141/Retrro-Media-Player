@@ -5,6 +5,7 @@ use windows::Storage::Streams::DataReader;
 const VK_MEDIA_PLAY_PAUSE: u8 = 0xB3;
 const KEYEVENTF_KEYUP: u32 = 0x0002;
 const VK_MEDIA_PREV_TRACK: u8 = 0xB1;
+const VK_MEDIA_NEXT_TRACK: u8 = 0xB0;
 
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD as BASE64;
@@ -304,6 +305,26 @@ impl WindowsAdapter {
         if let Ok(async_op) = session.TryChangePlaybackPositionAsync(new_position) {
             let _ = async_op.get(); 
         }
+
+        Ok(())
+    }
+
+    fn next_media_key() {
+        unsafe {
+            keybd_event(VK_MEDIA_NEXT_TRACK, 0, 0, 0); 
+            keybd_event(VK_MEDIA_NEXT_TRACK, 0, KEYEVENTF_KEYUP, 0); 
+        }
+    }
+
+    pub fn next(&self) -> Result<(), String> {
+        let manager = Self::get_manager().map_err(|e| format!("Manager error: {:?}", e))?;
+        
+        let _session = match manager.GetCurrentSession() {
+            Ok(s) => s,
+            Err(_) => return Ok(()), 
+        };
+
+        Self::next_media_key();
 
         Ok(())
     }

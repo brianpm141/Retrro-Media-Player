@@ -21,7 +21,9 @@ window.addEventListener("DOMContentLoaded", async () => {
   const prevBtn = document.querySelector('button[aria-label="Skip Back"]') as HTMLElement | null;
   const rewindBtn = document.querySelector('button[aria-label="Rewind"]') as HTMLElement | null;
   const fastForwardBtn = document.querySelector('button[aria-label="Fast Forward"]') as HTMLElement | null;
-
+  const nextBtn = document.querySelector('button[aria-label="Skip Fwd"]') as HTMLElement | null;
+  
+  
   minimizeBtn?.addEventListener("click", async (e) => {
     e.stopPropagation();
     await win.minimize();
@@ -139,6 +141,23 @@ window.addEventListener("DOMContentLoaded", async () => {
             }, 500);
         });
     }
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            if (isCommandPending) return;
+            isCommandPending = true;
+
+            invoke('next_media').catch(err => console.error("[TS ERROR] Fallo IPC (Next):", err));
+            
+            setTimeout(() => {
+                isCommandPending = false;
+                updateMedia(); 
+            }, 500);
+        });
+    }
+
 
 });
 
