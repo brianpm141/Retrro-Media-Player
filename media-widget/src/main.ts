@@ -23,7 +23,6 @@ window.addEventListener("DOMContentLoaded", async () => {
   const fastForwardBtn = document.querySelector('button[aria-label="Fast Forward"]') as HTMLElement | null;
   const nextBtn = document.querySelector('button[aria-label="Skip Fwd"]') as HTMLElement | null;
   
-  
   minimizeBtn?.addEventListener("click", async (e) => {
     e.stopPropagation();
     await win.minimize();
@@ -34,25 +33,23 @@ window.addEventListener("DOMContentLoaded", async () => {
     await win.close();
   });
 
+  // Iniciamos los bucles de actualización (Loops)
   setInterval(updateMedia, 1000);
   requestAnimationFrame(animateSeek);
 
+  // ==========================================
+  // EVENT LISTENERS DE BOTONES NORMALES
+  // ==========================================
   if (playBtn) {
         playBtn.addEventListener('click', (e) => {
             e.preventDefault(); 
-            
             if (isCommandPending) return;
-
             isCommandPending = true;
             isPlaying = true; 
             playbackStartTime = Date.now(); 
 
             invoke('play_media').catch(err => console.error("[TS ERROR] Fallo IPC:", err));
-            
-            setTimeout(() => {
-                isCommandPending = false;
-                updateMedia();
-            }, 500); 
+            setTimeout(() => { isCommandPending = false; updateMedia(); }, 500); 
         });
     }
 
@@ -60,17 +57,12 @@ window.addEventListener("DOMContentLoaded", async () => {
         pauseBtn.addEventListener('click', (e) => {
             e.preventDefault();
             if (isCommandPending) return;
-
             isCommandPending = true;
             isPlaying = false;
             playbackOffset += (Date.now() - playbackStartTime); 
 
             invoke('pause_media').catch(err => console.error("[TS ERROR] Fallo IPC:", err));
-            
-            setTimeout(() => {
-                isCommandPending = false;
-                updateMedia();
-            }, 500);
+            setTimeout(() => { isCommandPending = false; updateMedia(); }, 500);
         });
     }
 
@@ -78,95 +70,109 @@ window.addEventListener("DOMContentLoaded", async () => {
         stopBtn.addEventListener('click', (e) => {
             e.preventDefault();
             if (isCommandPending) return;
-
             isCommandPending = true;
             isPlaying = false;
             playbackOffset += (Date.now() - playbackStartTime);
 
             invoke('pause_media').catch(err => console.error("[TS ERROR] Fallo IPC:", err));
-            
-            setTimeout(() => {
-                isCommandPending = false;
-                updateMedia();
-            }, 500);
+            setTimeout(() => { isCommandPending = false; updateMedia(); }, 500);
         });
     }
 
     if (prevBtn) {
         prevBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            
             if (isCommandPending) return;
-
             isCommandPending = true;
 
             invoke('previous_media').catch(err => console.error("[TS ERROR] Fallo IPC (Previous):", err));
-            
-            setTimeout(() => {
-                isCommandPending = false;
-                updateMedia();
-            }, 500);
+            setTimeout(() => { isCommandPending = false; updateMedia(); }, 500);
         });
     }
 
     if (rewindBtn) {
         rewindBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            
             if (isCommandPending) return;
             isCommandPending = true;
 
             invoke('rewind_media').catch(err => console.error("[TS ERROR] Fallo IPC (Rewind):", err));
-            
-            setTimeout(() => {
-                isCommandPending = false;
-                updateMedia(); 
-            }, 500);
+            setTimeout(() => { isCommandPending = false; updateMedia(); }, 500);
         });
     }
 
     if (fastForwardBtn) {
         fastForwardBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            
             if (isCommandPending) return;
             isCommandPending = true;
 
             invoke('fast_forward_media').catch(err => console.error("[TS ERROR] Fallo IPC (Fast Forward):", err));
-            
-            // 500ms para que Windows procese el salto y la UI reciba la nueva posición del progreso
-            setTimeout(() => {
-                isCommandPending = false;
-                updateMedia(); 
-            }, 500);
+            setTimeout(() => { isCommandPending = false; updateMedia(); }, 500);
         });
     }
 
     if (nextBtn) {
         nextBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            
             if (isCommandPending) return;
             isCommandPending = true;
 
             invoke('next_media').catch(err => console.error("[TS ERROR] Fallo IPC (Next):", err));
-            
-            setTimeout(() => {
-                isCommandPending = false;
-                updateMedia(); 
-            }, 500);
+            setTimeout(() => { isCommandPending = false; updateMedia(); }, 500);
         });
     }
 
+    // ==========================================
+    // LÓGICA DE LA BARRA DE PROGRESO (BLINDADA)
+    // ==========================================
+    const seekTrack = document.querySelector(".seek-track") as HTMLElement | null;
+    let seekTimeout: number | null = null; 
 
-});
+    if (seekTrack) {
+        seekTrack.addEventListener('click', (e) => {
+            if (durationMs <= 0) return;
+
+            const rect = seekTrack.getBoundingClientRect();
+            const clickX = Math.max(0, e.clientX - rect.left); 
+            const percent = Math.min(1, clickX / rect.width);
+            const newPositionMs = Math.floor(percent * durationMs);
+
+            playbackOffset = newPositionMs;
+            playbackStartTime = Date.now();
+
+            if (seekTimeout) clearTimeout(seekTimeout);
+
+            // ¡Silenciamos updateMedia() para que el OS respire!
+            isCommandPending = true;
+
+            seekTimeout = window.setTimeout(() => {
+                invoke('seek_media', { positionMs: newPositionMs })
+                    .then(() => {
+                        // Le damos 500ms al SO para estabilizar antes de consultar de nuevo
+                        setTimeout(() => {
+                            isCommandPending = false;
+                            updateMedia();
+                        }, 500);
+                    })
+                    .catch(err => {
+                        console.error("[TS ERROR] Fallo IPC (Seek):", err);
+                        isCommandPending = false; 
+                    });
+            }, 300);
+        });
+    }
+}); // <-- AQUÍ TERMINA EL DOMContentLoaded
+
+// ==========================================
+// FUNCIONES GLOBALES
+// ==========================================
 
 async function updateMedia() {
   if (isCommandPending) return;
 
   try {
     const state: any = await invoke("get_media_state");
-
     if (!state || !state.metadata) return;
 
     const metadata = state.metadata;
@@ -203,12 +209,12 @@ async function updateMedia() {
     if (authorEl && authorEl.textContent !== metadata.artist) {
       authorEl.textContent = metadata.artist || "";
     }
-
   } catch (err) {
     console.error("Update error:", err);
   }
 }
 
+// ¡Esta función debe ser estricta y únicamente para dibujar!
 function animateSeek() {
   const track = document.querySelector(".seek-track") as HTMLElement | null;
   const thumb = document.querySelector(".seek-thumb") as HTMLElement | null;
@@ -222,7 +228,6 @@ function animateSeek() {
     }
 
     const percent = Math.min(Math.max(currentPosition / durationMs, 0), 1);
-
     const maxWidth = track.clientWidth - thumb.clientWidth;
     const offset = maxWidth * percent;
 
@@ -236,7 +241,6 @@ function animateSeek() {
 async function loadArtwork() {
   try {
     const artwork: string | null = await invoke("get_artwork_only");
-
     const img = document.getElementById("track-image") as HTMLImageElement | null;
     if (!img) return;
 
@@ -247,7 +251,6 @@ async function loadArtwork() {
       img.src = "/assets/default.png";
       lastArtwork = null;
     }
-
   } catch (e) {
     console.error("Artwork load error:", e);
   }

@@ -179,6 +179,51 @@ impl WindowsAdapter {
         }
     }
 
+    pub fn seek_to(&self, position_ms: u64) -> Result<(), String> {
+        let manager = Self::get_manager().map_err(|e| format!("Manager error: {:?}", e))?;
+        
+        let session = match manager.GetCurrentSession() {
+            Ok(s) => s,
+            Err(_) => return Ok(()),
+        };
+
+        let timeline = match session.GetTimelineProperties() {
+            Ok(t) => t,
+            Err(_) => return Ok(()),
+        };
+
+        let start = match timeline.StartTime() {
+            Ok(s) => s.Duration,
+            Err(_) => 0,
+        };
+
+        let end = match timeline.EndTime() {
+            Ok(e) => e.Duration,
+            Err(_) => return Ok(()), 
+        };
+
+        let target_seconds = position_ms / 1000;
+        let target_ticks = (target_seconds as i64) * 10_000_000;
+        
+        let mut new_position = start + target_ticks;
+
+        let margin = 10_000_000; 
+        if end > start + (margin * 2) { 
+            if new_position > end - margin {
+                new_position = end - margin; 
+            } else if new_position < start + margin {
+                new_position = start + margin; 
+            }
+        } else {
+            if new_position > end { new_position = end; }
+            if new_position < start { new_position = start; }
+        }
+
+        let _ = session.TryChangePlaybackPositionAsync(new_position);
+
+        Ok(())
+    }
+
     pub fn play(&self) -> Result<(), String> {
         let manager = Self::get_manager().map_err(|e| format!("{:?}", e))?;
         let session = match manager.GetCurrentSession() {

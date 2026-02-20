@@ -62,6 +62,12 @@ async fn next_media() -> Result<(), String> {
     adapter.next()
 }
 
+#[tauri::command]
+async fn seek_media(position_ms: u64) -> Result<(), String> {
+    let adapter = WindowsAdapter;
+    adapter.seek_to(position_ms)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -69,6 +75,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_media_state,
             get_artwork_only,
+            seek_media,
             play_media,   
             pause_media,
             previous_media,
