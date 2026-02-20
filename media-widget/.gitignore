@@ -1,0 +1,96 @@
+############################
+# ===== Rust =====
+############################
+
+/target/
+**/*.rs.bk
+Cargo.lock
+# ⚠️ Si es app final, puedes versionar Cargo.lock.
+# Para librerías, normalmente se ignora.
+
+############################
+# ===== Tauri =====
+############################
+
+# Tauri build output
+/src-tauri/target/
+/src-tauri/gen/
+/src-tauri/icons/*.png
+
+# Bundles
+/src-tauri/bundler/
+/dist-tauri/
+
+############################
+# ===== Node / Vite =====
+############################
+
+node_modules/
+dist/
+dist-ssr/
+.vite/
+.vite-inspect/
+*.tsbuildinfo
+
+############################
+# ===== Logs =====
+############################
+
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+############################
+# ===== Environment =====
+############################
+
+.env
+.env.*
+!.env.example
+
+############################
+# ===== IDE =====
+############################
+
+# VSCode
+.vscode/
+!.vscode/extensions.json
+
+# JetBrains
+.idea/
+*.iml
+
+############################
+# ===== OS junk =====
+############################
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+############################
+# ===== Coverage / Testing =====
+############################
+
+coverage/
+lcov.info
+
+############################
+# ===== Misc =====
+############################
+
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo

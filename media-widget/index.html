@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="/src/styles/retro.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tauri App</title>
+    <script type="module" src="/src/main.ts" defer></script>
+  </head>
+
+  <body>
+
+      <div class="wmp-window">
+
+        <div class="title-bar" data-tauri-drag-region>
+          <div class="title-left">
+            <div class="wmp-icon"></div>
+            <div class="title-text">Retro Media Player</div>
+          </div>
+          <div class="window-controls" data-tauri-drag-region="false">
+            <button id="minimize" aria-label="Minimize"><div class="icon-min"></div></button>
+            <button id="maximize" aria-label="Maximize"><div class="icon-max"></div></button>
+            <button id="close" aria-label="Close"><div class="icon-close"></div></button>
+          </div>
+        </div>
+
+        <div class="menu-bar">
+          <span><u>F</u>ile</span>
+          <span><u>V</u>iew</span>
+          <span><u>P</u>lay</span>
+          <span>F<u>a</u>vorites</span>
+          <span><u>G</u>o</span>
+          <span><u>H</u>elp</span>
+        </div>
+
+        <div class="window-body">
+
+          <div class="artwork-tools">
+            <div class="nav-arrows">
+              <button class="mini-btn"><div class="arrow-left"></div></button>
+              <button class="mini-btn"><div class="arrow-right"></div></button>
+            </div>
+            <button class="showcase-btn">
+              <span class="sc-icon"></span> Showcase
+            </button>
+          </div>
+
+          <div class="artwork-container">
+            <img
+              id="track-image"
+              src="/src/assets/default.png"
+              alt="Track artwork"
+              class="artwork-img"
+            />
+          </div>
+
+
+          <div class="transport-area">
+            
+            <div class="seek-row">
+              <div class="seek-icon-left"></div>
+              <div class="seek-track">
+                <div class="seek-fill"></div>
+                <div class="seek-thumb"></div>
+              </div>
+            </div>
+
+
+            <div class="controls-row">
+                
+                <div class="btn-group">
+                    <button class="ctrl-btn" aria-label="Play"><div class="icon-play"></div></button>
+                    <button class="ctrl-btn" aria-label="Pause"><div class="icon-pause"></div></button>
+                    <button class="ctrl-btn" aria-label="Stop"><div class="icon-stop"></div></button>
+                </div>
+
+                <div class="divider-v"></div>
+
+                <div class="btn-group">
+                    <button class="ctrl-btn" aria-label="Skip Back"><div class="icon-skip-back"></div></button>
+                    <button class="ctrl-btn" aria-label="Rewind"><div class="icon-rewind"></div></button>
+                    <button class="ctrl-btn" aria-label="Fast Forward"><div class="icon-ff"></div></button>
+                    <button class="ctrl-btn" aria-label="Skip Fwd"><div class="icon-skip-fwd"></div></button>
+                </div>
+
+                <div class="divider-v"></div>
+
+                <div class="btn-group">
+                    <button class="ctrl-btn" aria-label="Playlist"><div class="icon-playlist"></div></button>
+                </div>
+
+                <div class="volume-group">
+                    <div class="icon-speaker"></div>
+                    <div class="volume-wedge-container">
+                        <div class="volume-wedge-fill"></div>
+                        <div class="volume-handle"></div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="deco-bar-row">
+                <div class="deco-box">
+                    <div class="deco-arrow"></div>
+                </div>
+            </div>
+
+          </div>
+
+          <div class="metadata-container">
+            <div class="metadata-content">
+                <div class="meta-row">
+                  <span class="meta-label">Show:</span>
+                  <span class="meta-val" id="meta-show">Tyler, The Creator - Lik</span>
+                </div>
+                <div class="meta-divider"></div>
+                <div class="meta-row">
+                  <span class="meta-label">Clip:</span>
+                  <span class="meta-val" id="meta-clip"></span>
+                </div>
+                <div class="meta-row">
+                  <span class="meta-label">Author:</span>
+                  <span class="meta-val" id="meta-author">mellow mashups</span>
+                </div>
+                <div class="meta-row">
+                  <span class="meta-label">Copyright:</span>
+                  <span class="meta-val" id="meta-copy"></span>
+                </div>
+                <div class="meta-divider"></div>
+                <div class="meta-empty"></div>
+            </div>
+
+            <div class="scrollbar-gutter">
+                <div class="scroll-btn up"></div>
+                <div class="scroll-track"></div>
+                <div class="scroll-btn down"></div>
+            </div>
+          </div>
+
+        </div> 
+      </div>
+
+    </body>
+
+</html>

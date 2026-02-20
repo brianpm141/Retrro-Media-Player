@@ -1,0 +1,368 @@
+/* ================================= */
+/* ========= VARIABLES & RESET ===== */
+/* ================================= */
+:root {
+  --win-bg: #C0C0C0;      /* Gris base Win98 */
+  --win-text: #000000;
+  --win-hilight: #FFFFFF; /* Luz (Bisel superior/izquierdo) */
+  --win-light: #DFDFDF;   /* Luz suave */
+  --win-shadow: #808080;  /* Sombra media (Bisel inferior/derecho) */
+  --win-dark: #000000;    /* Sombra fuerte */
+  --win-blue-dark: #000080;
+  --win-blue-light: #1084D0;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden; /* CERO Scrollbars nativas */
+  background-color: var(--win-bg);
+  font-family: 'Tahoma', 'Microsoft Sans Serif', sans-serif;
+  font-size: 11px;
+}
+
+/* ================================= */
+/* ========= WINDOW FRAME ========= */
+/* ================================= */
+.wmp-window {
+  width: 100%;
+  height: 100%; 
+  display: flex;
+  flex-direction: column;
+  background-color: var(--win-bg);
+  
+  /* Borde principal de la ventana */
+  border-top: 2px solid var(--win-hilight);
+  border-left: 2px solid var(--win-hilight);
+  border-right: 2px solid var(--win-dark);
+  border-bottom: 2px solid var(--win-dark);
+  box-shadow: inset -1px -1px 0 var(--win-shadow), 
+              inset 1px 1px 0 var(--win-light);
+  padding: 2px;
+}
+
+/* ================================= */
+/* ========= TITLE BAR ============ */
+/* ================================= */
+.title-bar {
+  height: 18px;
+  background: linear-gradient(90deg, var(--win-blue-dark), var(--win-blue-light));
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 2px;
+  margin-bottom: 2px;
+}
+
+.title-left { display: flex; align-items: center; gap: 4px; padding-left: 2px; }
+.title-text { color: white; font-weight: bold; font-size: 11px; letter-spacing: 0.5px; }
+
+.wmp-icon {
+  width: 12px; height: 12px; background: #FFF;
+  border: 1px solid var(--win-shadow); position: relative;
+}
+.wmp-icon::after {
+  content: ''; position: absolute; top: 1px; left: 1px; width: 8px; height: 8px;
+  background: conic-gradient(orange, blue, green, red); border-radius: 50%;
+}
+
+.window-controls { display: flex; gap: 2px; }
+.window-controls button {
+  width: 16px; height: 14px; background: var(--win-bg);
+  border-top: 1px solid var(--win-hilight); border-left: 1px solid var(--win-hilight);
+  border-right: 1px solid var(--win-dark); border-bottom: 1px solid var(--win-dark);
+  padding: 0; display: flex; justify-content: center; align-items: center;
+}
+.window-controls button:active {
+  border-top: 1px solid var(--win-dark); border-left: 1px solid var(--win-dark);
+  border-right: 1px solid var(--win-hilight); border-bottom: 1px solid var(--win-hilight);
+}
+
+.icon-min { width: 6px; height: 2px; background: black; margin-top: 6px; }
+.icon-max { width: 8px; height: 7px; border-top: 2px solid black; border: 1px solid black; }
+.icon-close { width: 8px; height: 8px; position: relative; }
+.icon-close::before, .icon-close::after {
+  content: ''; position: absolute; width: 100%; height: 1px; background: black; top: 3px; left: 0;
+}
+.icon-close::before { transform: rotate(45deg); }
+.icon-close::after { transform: rotate(-45deg); }
+
+/* ================================= */
+/* ========= MENU BAR ============= */
+/* ================================= */
+.menu-bar { display: flex; padding: 1px 6px; gap: 10px; color: #000; font-size: 11px; }
+.menu-bar span:hover { background-color: var(--win-blue-dark); color: white; }
+
+/* ================================= */
+/* ========= MAIN BODY ============ */
+/* ================================= */
+.window-body {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 0 2px 2px 2px; overflow: hidden;
+}
+
+/* ARTWORK TOOLS (Header) */
+.artwork-tools {
+  display: flex; justify-content: space-between; align-items: center;
+  border-top: 1px solid var(--win-shadow); border-bottom: 1px solid var(--win-hilight);
+  padding: 4px 2px; margin-bottom: 2px; background: var(--win-bg);
+}
+.nav-arrows { display: flex; gap: 0; }
+.mini-btn {
+  width: 20px; height: 20px; background: var(--win-bg);
+  border-top: 1px solid var(--win-hilight); border-left: 1px solid var(--win-hilight);
+  border-right: 1px solid var(--win-shadow); border-bottom: 1px solid var(--win-shadow);
+  display: flex; justify-content: center; align-items: center;
+}
+.mini-btn:active {
+  border-top: 1px solid var(--win-shadow); border-left: 1px solid var(--win-shadow);
+  border-right: 1px solid var(--win-hilight); border-bottom: 1px solid var(--win-hilight);
+}
+.arrow-left { border-top: 4px solid transparent; border-bottom: 4px solid transparent; border-right: 5px solid #555; }
+.arrow-right { border-top: 4px solid transparent; border-bottom: 4px solid transparent; border-left: 5px solid #555; }
+
+.showcase-btn {
+  background: var(--win-bg); padding: 1px 6px; display: flex; align-items: center; gap: 4px;
+  border-top: 1px solid var(--win-hilight); border-left: 1px solid var(--win-hilight);
+  border-right: 1px solid var(--win-shadow); border-bottom: 1px solid var(--win-shadow);
+}
+.sc-icon { width: 12px; height: 10px; background: #808080; border: 1px solid #444; }
+
+/* ARTWORK CONTAINER */
+.artwork-container {
+  background: #000; height: 160px; /* Ajustado para dar espacio a los controles */
+  border-top: 2px solid var(--win-shadow); border-left: 2px solid var(--win-shadow);
+  border-right: 2px solid var(--win-hilight); border-bottom: 2px solid var(--win-hilight);
+  position: relative; overflow: hidden; display: flex; justify-content: center; align-items: center;
+}
+
+
+
+.artwork-img { 
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover;
+    transition: opacity 0.15s ease-in-out; 
+}
+
+/* ================================= */
+/* ========= TRANSPORT AREA ======= */
+/* ================================= */
+.transport-area {
+  padding: 4px 6px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+
+/* 1. Seek Row */
+
+.seek-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+}
+
+/* Icono lateral decorativo */
+.seek-icon-left {
+  width: 12px;
+  height: 14px;
+  background: var(--win-bg);
+
+  border-top: 1px solid var(--win-shadow);
+  border-left: 1px solid var(--win-shadow);
+  border-right: 1px solid var(--win-hilight);
+  border-bottom: 1px solid var(--win-hilight);
+}
+
+/* Track principal */
+.seek-track {
+  flex: 1;
+  height: 14px;
+  position: relative;
+  overflow: hidden;
+  background: var(--win-bg);
+
+  border-top: 1px solid var(--win-shadow);
+  border-left: 1px solid var(--win-shadow);
+  border-right: 1px solid var(--win-hilight);
+  border-bottom: 1px solid var(--win-hilight);
+}
+
+/* Barra verde que crece */
+.seek-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0%;
+  background: #00c000; /* verde retro */
+
+  pointer-events: none;
+  z-index: 1;
+
+  transition: width 0.15s linear;
+}
+
+/* Thumb */
+.seek-thumb {
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 10px;
+  height: 14px;
+  background: var(--win-bg);
+
+  border-top: 1px solid var(--win-hilight);
+  border-left: 1px solid var(--win-hilight);
+  border-right: 1px solid var(--win-shadow);
+  border-bottom: 1px solid var(--win-shadow);
+
+  z-index: 2;
+  transition: left 0.15s linear;
+}
+
+
+/* 2. Controls Row */
+.controls-row {
+  display: flex; align-items: center; justify-content: flex-start; gap: 4px;
+}
+
+/* Grupos y Botones */
+.btn-group { display: flex; gap: 0; }
+.ctrl-btn {
+  width: 24px; height: 24px; background: var(--win-bg); border: 1px solid transparent;
+  display: flex; justify-content: center; align-items: center;
+}
+/* Efecto hover/active clásico */
+.ctrl-btn:hover {
+  border-top: 1px solid var(--win-hilight); border-left: 1px solid var(--win-hilight);
+  border-right: 1px solid var(--win-shadow); border-bottom: 1px solid var(--win-shadow);
+}
+.ctrl-btn:active {
+  border-top: 1px solid var(--win-shadow); border-left: 1px solid var(--win-shadow);
+  border-right: 1px solid var(--win-hilight); border-bottom: 1px solid var(--win-hilight);
+}
+
+/* Separadores Verticales (Efecto Grabado) */
+.divider-v {
+  width: 2px; height: 20px; margin: 0 4px;
+  border-left: 1px solid var(--win-shadow); border-right: 1px solid var(--win-hilight);
+}
+
+/* Iconos de Control (Geometría CSS Pura, color gris oscuro #444) */
+.icon-play { border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-left: 8px solid #444; }
+.icon-pause { width: 8px; height: 10px; border-left: 3px solid #444; border-right: 3px solid #444; }
+.icon-stop { width: 8px; height: 8px; background: #444; }
+
+.icon-skip-back { display: flex; align-items: center; }
+.icon-skip-back::before { content:''; border: 4px solid transparent; border-right: 5px solid #444; }
+.icon-skip-back::after { content:''; width: 2px; height: 8px; background: #444; margin-left: 1px; }
+
+.icon-rewind { display: flex; }
+.icon-rewind::before, .icon-rewind::after { content:''; border: 4px solid transparent; border-right: 4px solid #444; }
+
+.icon-ff { display: flex; }
+.icon-ff::before, .icon-ff::after { content:''; border: 4px solid transparent; border-left: 4px solid #444; }
+
+.icon-skip-fwd { display: flex; align-items: center; }
+.icon-skip-fwd::before { content:''; width: 2px; height: 8px; background: #444; margin-right: 1px; }
+.icon-skip-fwd::after { content:''; border: 4px solid transparent; border-left: 5px solid #444; }
+
+.icon-playlist {
+  width: 10px; height: 10px; border-top: 2px solid #444; border-bottom: 2px solid #444; position: relative;
+}
+.icon-playlist::after { content:''; position: absolute; top: 2px; left: 0; width: 10px; height: 2px; background: #444; }
+
+/* Volumen (Triángulo Gradiente) */
+.volume-group { display: flex; align-items: center; gap: 4px; margin-left: 6px; }
+.icon-speaker {
+  width: 14px; height: 14px; background: #444;
+  clip-path: polygon(0 35%, 30% 35%, 100% 10%, 100% 90%, 30% 65%, 0 65%);
+}
+
+.volume-wedge-container {
+  width: 45px; height: 14px; position: relative;
+}
+/* Esta es la magia para la línea diagonal grabada */
+.volume-wedge-container::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(to top right, transparent 48%, var(--win-shadow) 48%, var(--win-shadow) 50%, var(--win-hilight) 50%, var(--win-hilight) 52%, transparent 52%);
+}
+.volume-handle {
+  position: absolute; top: 0; right: 0; width: 6px; height: 14px; background: var(--win-bg);
+  border-top: 1px solid var(--win-hilight); border-left: 1px solid var(--win-hilight);
+  border-right: 1px solid var(--win-shadow); border-bottom: 1px solid var(--win-shadow);
+}
+
+/* 3. Decorative Dropdown Box */
+.deco-bar-row { width: 100%; margin-top: 2px; }
+.deco-box {
+  width: 100%; height: 18px; background: var(--win-light); display: flex; justify-content: flex-end;
+  border-top: 1px solid var(--win-shadow); border-left: 1px solid var(--win-shadow);
+  border-right: 1px solid var(--win-hilight); border-bottom: 1px solid var(--win-hilight);
+}
+.deco-arrow {
+  width: 16px; height: 100%; background: var(--win-bg); display: flex; justify-content: center; align-items: center;
+  border-top: 1px solid var(--win-hilight); border-left: 1px solid var(--win-hilight);
+  border-right: 1px solid var(--win-shadow); border-bottom: 1px solid var(--win-shadow);
+}
+/* Flechita negra apuntando abajo */
+.deco-arrow::after { content: ''; border-left: 3px solid transparent; border-right: 3px solid transparent; border-top: 4px solid #000; margin-top: 2px; }
+
+/* ================================= */
+/* ========= METADATA ============= */
+/* ================================= */
+.metadata-container {
+  flex: 1; background: #000; display: flex; margin-bottom: 2px; overflow: hidden;
+  border-top: 2px solid var(--win-shadow); border-left: 2px solid var(--win-shadow);
+  border-right: 2px solid var(--win-hilight); border-bottom: 2px solid var(--win-hilight);
+}
+
+.metadata-content {
+  flex: 1; padding: 4px 6px; color: #FFF; font-family: 'Courier New', monospace; font-size: 10px;
+  display: flex; flex-direction: column;
+}
+.meta-row { display: flex; align-items: center; margin-bottom: 2px; white-space: nowrap; }
+.meta-label { color: #CCC; margin-right: 6px; min-width: 45px; }
+.meta-val { color: #FFF; font-weight: bold; }
+
+.meta-divider { height: 1px; background: #404040; margin: 2px 0; width: 100%; }
+.meta-empty { flex-grow: 1; }
+
+/* Fake Scrollbar derecha */
+.scrollbar-gutter {
+  width: 14px; background: var(--win-bg); display: flex; flex-direction: column;
+  border-left: 1px solid var(--win-shadow);
+}
+.scroll-btn {
+  width: 100%; height: 14px; background: var(--win-bg); position: relative;
+  border-top: 1px solid var(--win-hilight); border-left: 1px solid var(--win-hilight);
+  border-right: 1px solid var(--win-dark); border-bottom: 1px solid var(--win-dark);
+}
+.scroll-btn::after { content:''; position: absolute; border: 4px solid transparent; left: 2px; }
+.scroll-btn.up::after { border-bottom-color: #000; top: 2px; }
+.scroll-btn.down::after { border-top-color: #000; top: 5px; }
+
+.scroll-track {
+  flex: 1; background: var(--win-light);
+  background-image: radial-gradient(#FFF 15%, transparent 16%), radial-gradient(#FFF 15%, transparent 16%);
+  background-size: 4px 4px;
+}
+
+/* ================================= */
+/* ========= STATUS BAR =========== */
+/* ================================= */
+.status-bar {
+  border-top: 1px solid var(--win-shadow); border-left: 1px solid var(--win-shadow);
+  border-right: 1px solid var(--win-hilight); border-bottom: 1px solid var(--win-hilight);
+  padding: 2px 4px; color: #000; height: 18px; display: flex; align-items: center;
+}
