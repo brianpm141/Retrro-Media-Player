@@ -26,8 +26,6 @@ fn get_artwork_only() -> Result<Option<String>, String> {
 
 #[tauri::command]
 async fn play_media() -> Result<(), String> {
-    // Al ser una función async en Tauri, se ejecuta en un hilo del threadpool, 
-    // por lo que el .get() bloqueante que pusimos en WindowsAdapter no congelará la UI.
     let adapter = WindowsAdapter;
     adapter.play()
 }

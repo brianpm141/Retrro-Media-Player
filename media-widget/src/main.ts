@@ -60,7 +60,6 @@ window.addEventListener("DOMContentLoaded", async () => {
             const clickX = Math.max(0, e.clientX - rect.left);
             const percent = Math.min(1, clickX / rect.width);
             
-            // UX inteligente: Si arrastran la barra estando en Mute, quitamos el Mute
             if (isMuted && percent > 0) {
                 isMuted = false;
             }
@@ -89,11 +88,11 @@ window.addEventListener("DOMContentLoaded", async () => {
     if (muteBtn) {
         muteBtn.addEventListener('click', async (e) => {
             e.preventDefault();
-            console.log("[TS] ¡Boton Mute clickeado!"); // <-- DIAGNÓSTICO 1
+            console.log("[TS] ¡Boton Mute clickeado!"); 
             
             try {
                 const currentVol = await invoke('get_volume') as number;
-                console.log("[TS] Volumen actual leído de Rust:", currentVol); // <-- DIAGNÓSTICO 2
+                console.log("[TS] Volumen actual leído de Rust:", currentVol); 
 
                 if (currentVol > 0) {
                     savedVolume = currentVol; 
@@ -109,7 +108,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                     console.log("[TS] Orden de DES-MUTE enviada al volumen:", restoreVol);
                 }
             } catch (err) {
-                console.error("[TS] Error fatal en Mute:", err); // <-- DIAGNÓSTICO 3
+                console.error("[TS] Error fatal en Mute:", err); 
             }
         });
     } else {
@@ -223,9 +222,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    // ==========================================
-    // LÓGICA DE LA BARRA DE PROGRESO (BLINDADA)
-    // ==========================================
+
     const seekTrack = document.querySelector(".seek-track") as HTMLElement | null;
     let seekTimeout: number | null = null; 
 
@@ -310,7 +307,6 @@ async function updateMedia() {
   }
 }
 
-// ¡Esta función debe ser estricta y únicamente para dibujar!
 function animateSeek() {
   const track = document.querySelector(".seek-track") as HTMLElement | null;
   const thumb = document.querySelector(".seek-thumb") as HTMLElement | null;
