@@ -2,6 +2,16 @@
 
 use windows::Storage::Streams::DataReader;
 
+use windows::Win32::System::Com::{
+    CoInitializeEx, CoCreateInstance, COINIT_MULTITHREADED, CLSCTX_INPROC_SERVER
+};
+use windows::Win32::Media::Audio::{
+    eRender, eConsole, IMMDeviceEnumerator, MMDeviceEnumerator, IMMDevice
+};
+
+use windows::Win32::Media::Audio::Endpoints::IAudioEndpointVolume;
+
+
 const VK_MEDIA_PLAY_PAUSE: u8 = 0xB3;
 const KEYEVENTF_KEYUP: u32 = 0x0002;
 const VK_MEDIA_PREV_TRACK: u8 = 0xB1;
@@ -372,6 +382,51 @@ impl WindowsAdapter {
         Self::next_media_key();
 
         Ok(())
+    }
+}
+
+impl WindowsAdapter {
+    fn get_audio_endpoint() -> Result<IAudioEndpointVolume, String> {
+        unsafe {
+            let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
+
+            let enumerator: IMMDeviceEnumerator = CoCreateInstance(
+                &MMDeviceEnumerator,
+                None,
+                CLSCTX_INPROC_SERVER,
+            ).map_err(|e| format!("Error enumerador COM: {:?}", e))?;
+
+            let device: IMMDevice = enumerator
+                .GetDefaultAudioEndpoint(eRender, eConsole)
+                .map_err(|e| format!("Error obteniendo dispositivo: {:?}", e))?;
+
+            let endpoint_volume: IAudioEndpointVolume = device
+                .Activate(CLSCTX_INPROC_SERVER, None)
+                .map_err(|e| format!("Error activando volumen: {:?}", e))?;
+
+            Ok(endpoint_volume)
+        }
+    }
+
+    pub fn set_volume(&self, level: f32) -> Result<(), String> {
+        let endpoint = Self::get_audio_endpoint()?;
+        let safe_level = level.clamp(0.0, 1.0); 
+        
+        unsafe {
+            endpoint.SetMasterVolumeLevelScalar(safe_level, std::ptr::null())
+                .map_err(|e| format!("Error fijando volumen: {:?}", e))?;
+        }
+        Ok(())
+    }
+
+    pub fn get_volume(&self) -> Result<f32, String> {
+        let endpoint = Self::get_audio_endpoint()?;
+        unsafe {
+            let level = endpoint.GetMasterVolumeLevelScalar()
+                .map_err(|e| format!("Error leyendo volumen: {:?}", e))?;
+            
+            Ok(level)
+        }
     }
 
 }

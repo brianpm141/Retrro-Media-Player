@@ -282,25 +282,71 @@ html, body {
 }
 .icon-playlist::after { content:''; position: absolute; top: 2px; left: 0; width: 10px; height: 2px; background: #444; }
 
-/* Volumen (Triángulo Gradiente) */
-.volume-group { display: flex; align-items: center; gap: 4px; margin-left: 6px; }
-.icon-speaker {
-  width: 14px; height: 14px; background: #444;
-  clip-path: polygon(0 35%, 30% 35%, 100% 10%, 100% 90%, 30% 65%, 0 65%);
+
+#vol-container {
+    width: 45px !important;
+    height: 14px !important;
+    position: relative;
+    border: 2px inset #dfdfdf; 
+    background-color: #000; 
+    cursor: pointer;
+    box-sizing: border-box; 
+    overflow: visible;
 }
 
-.volume-wedge-container {
-  width: 45px; height: 14px; position: relative;
+#vol-fill {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    height: 100% !important;
+    width: 100%; 
+    background: linear-gradient(90deg, #008000, #00ff00); 
+    pointer-events: none; 
 }
-/* Esta es la magia para la línea diagonal grabada */
-.volume-wedge-container::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(to top right, transparent 48%, var(--win-shadow) 48%, var(--win-shadow) 50%, var(--win-hilight) 50%, var(--win-hilight) 52%, transparent 52%);
+
+#vol-handle {
+    position: absolute !important; 
+    width: 10px !important;
+    height: 18px !important; 
+    top: -4px !important; 
+    left: 100%; 
+    margin-left: -5px !important; 
+    background-color: #c0c0c0;
+    border: 2px outset #fff;
+    cursor: grab;
+    pointer-events: none; 
+    box-sizing: border-box;
 }
-.volume-handle {
-  position: absolute; top: 0; right: 0; width: 6px; height: 14px; background: var(--win-bg);
-  border-top: 1px solid var(--win-hilight); border-left: 1px solid var(--win-hilight);
-  border-right: 1px solid var(--win-shadow); border-bottom: 1px solid var(--win-shadow);
+
+#vol-handle:active {
+    border: 2px inset #fff; /* Efecto de que se hunde al hacer clic */
+}
+
+#mute-btn {
+    cursor: pointer;
+    position: relative !important;
+    z-index: 9999 !important; /* Lo mandamos al frente de la pantalla para evitar solapamientos */
+}
+
+#mute-btn:hover {
+    filter: brightness(1.2);
+}
+
+/* Blindaje extra: evitamos que el ícono interno robe el clic */
+#speaker-icon {
+    pointer-events: none !important; 
+}
+
+.icon-speaker {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    /* Dibujamos la bocina y las ondas de sonido directamente en código: */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2,6 h3 l4,-4 v12 l-4,-4 h-3 z' fill='%23000'/%3E%3Cpath d='M11,5 a5,5 0 0 1 0,6 m2,-8 a8,8 0 0 1 0,10' fill='none' stroke='%23000' stroke-width='1.5'/%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    pointer-events: none !important; /* Blindaje para que no robe los clics del botón */
 }
 
 /* 3. Decorative Dropdown Box */

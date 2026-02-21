@@ -85,17 +85,20 @@
 
                 <div class="divider-v"></div>
 
-                <div class="btn-group">
-                    <button class="ctrl-btn" aria-label="Playlist"><div class="icon-playlist"></div></button>
-                </div>
+                <div class="volume-group" style="display: flex; align-items: center; gap: 5px;">
+                  <button class="ctrl-btn" id="mute-btn" aria-label="Mute/Unmute">
+                      <div class="icon-speaker" id="speaker-icon"></div>
+                  </button>
+                  
+                  <div class="volume-wedge-container" id="vol-container" title="Adjust Volume">
+                      <div class="volume-wedge-fill" id="vol-fill"></div>
+                      <div class="volume-handle" id="vol-handle"></div>
+                  </div>
 
-                <div class="volume-group">
-                    <div class="icon-speaker"></div>
-                    <div class="volume-wedge-container">
-                        <div class="volume-wedge-fill"></div>
-                        <div class="volume-handle"></div>
-                    </div>
-                </div>
+                  <span id="vol-label" style="font-family: 'Pixel', sans-serif; font-size: 10px; min-width: 25px; text-align: right;">
+                      100%
+                  </span>
+              </div>
 
             </div>
 

@@ -9,6 +9,9 @@ let playbackStartTime = 0;
 let playbackOffset = 0; 
 
 let isCommandPending = false;
+let isDraggingVolume = false;
+let isMuted = false;
+let savedVolume = 0.5;
 
 window.addEventListener("DOMContentLoaded", async () => {
   const win = await getCurrentWindow();
@@ -23,6 +26,106 @@ window.addEventListener("DOMContentLoaded", async () => {
   const fastForwardBtn = document.querySelector('button[aria-label="Fast Forward"]') as HTMLElement | null;
   const nextBtn = document.querySelector('button[aria-label="Skip Fwd"]') as HTMLElement | null;
   
+  const volContainer = document.querySelector(".volume-wedge-container") as HTMLElement | null;
+  const volFill = document.querySelector(".volume-wedge-fill") as HTMLElement | null;
+  const volHandle = document.querySelector(".volume-handle") as HTMLElement | null;
+  const muteBtn = document.getElementById("mute-btn");
+  const volLabel = document.getElementById("vol-label");
+  const speakerIcon = document.getElementById("speaker-icon");
+
+    const updateVolumeUI = (percent: number) => {
+        const p = Math.max(0, Math.min(1, percent));
+        
+        if (volFill) volFill.style.width = `${p * 100}%`;
+        if (volHandle) volHandle.style.left = `${p * 100}%`;
+
+        if (volLabel) {
+            if (p === 0 && isMuted) {
+                volLabel.textContent = "MUTE";
+                volLabel.style.color = "#ff5555"; 
+            } else {
+                volLabel.textContent = `${Math.round(p * 100)}%`;
+                volLabel.style.color = ""; 
+            }
+        }
+
+        if (speakerIcon) {
+            speakerIcon.style.opacity = (p === 0) ? "0.3" : "1";
+        }
+    };
+
+    if (volContainer) {
+        const handleVolChange = (e: MouseEvent) => {
+            const rect = volContainer.getBoundingClientRect();
+            const clickX = Math.max(0, e.clientX - rect.left);
+            const percent = Math.min(1, clickX / rect.width);
+            
+            // UX inteligente: Si arrastran la barra estando en Mute, quitamos el Mute
+            if (isMuted && percent > 0) {
+                isMuted = false;
+            }
+            if (!isMuted) {
+                savedVolume = percent;
+            }
+
+            updateVolumeUI(percent); 
+            invoke('set_volume', { level: percent }).catch(err => console.error("[TS] Error volumen:", err));
+        };
+
+        volContainer.addEventListener('mousedown', (e) => {
+            isDraggingVolume = true;
+            handleVolChange(e);
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (isDraggingVolume) handleVolChange(e);
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDraggingVolume = false;
+        });
+    }
+
+    if (muteBtn) {
+        muteBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            console.log("[TS] ¡Boton Mute clickeado!"); // <-- DIAGNÓSTICO 1
+            
+            try {
+                const currentVol = await invoke('get_volume') as number;
+                console.log("[TS] Volumen actual leído de Rust:", currentVol); // <-- DIAGNÓSTICO 2
+
+                if (currentVol > 0) {
+                    savedVolume = currentVol; 
+                    isMuted = true;
+                    updateVolumeUI(0);
+                    await invoke('set_volume', { level: 0.0 });
+                    console.log("[TS] Orden de MUTE enviada");
+                } else {
+                    isMuted = false;
+                    const restoreVol = savedVolume > 0 ? savedVolume : 0.5; 
+                    updateVolumeUI(restoreVol);
+                    await invoke('set_volume', { level: restoreVol });
+                    console.log("[TS] Orden de DES-MUTE enviada al volumen:", restoreVol);
+                }
+            } catch (err) {
+                console.error("[TS] Error fatal en Mute:", err); // <-- DIAGNÓSTICO 3
+            }
+        });
+    } else {
+        console.error("[TS] ERROR: No se encontró el botón mute-btn en el DOM al cargar la app.");
+    }
+
+    invoke('get_volume')
+        .then((vol: any) => {
+            if (typeof vol === 'number') {
+                savedVolume = vol;
+                if (vol === 0) isMuted = true;
+                updateVolumeUI(vol);
+            }
+        })
+        .catch(err => console.error("[TS] Error leyendo vol inicial:", err));
+
   minimizeBtn?.addEventListener("click", async (e) => {
     e.stopPropagation();
     await win.minimize();
@@ -33,13 +136,10 @@ window.addEventListener("DOMContentLoaded", async () => {
     await win.close();
   });
 
-  // Iniciamos los bucles de actualización (Loops)
   setInterval(updateMedia, 1000);
   requestAnimationFrame(animateSeek);
 
-  // ==========================================
-  // EVENT LISTENERS DE BOTONES NORMALES
-  // ==========================================
+
   if (playBtn) {
         playBtn.addEventListener('click', (e) => {
             e.preventDefault(); 
@@ -162,11 +262,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             }, 300);
         });
     }
-}); // <-- AQUÍ TERMINA EL DOMContentLoaded
-
-// ==========================================
-// FUNCIONES GLOBALES
-// ==========================================
+});
 
 async function updateMedia() {
   if (isCommandPending) return;

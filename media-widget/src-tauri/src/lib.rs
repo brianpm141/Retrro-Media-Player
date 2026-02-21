@@ -68,6 +68,18 @@ async fn seek_media(position_ms: u64) -> Result<(), String> {
     adapter.seek_to(position_ms)
 }
 
+#[tauri::command]
+async fn set_volume(level: f32) -> Result<(), String> {
+    let adapter = WindowsAdapter;
+    adapter.set_volume(level)
+}
+
+#[tauri::command]
+async fn get_volume() -> Result<f32, String> {
+    let adapter = WindowsAdapter;
+    adapter.get_volume()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -81,7 +93,9 @@ pub fn run() {
             previous_media,
             rewind_media,
             fast_forward_media,
-            next_media
+            next_media,
+            set_volume,
+            get_volume
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
