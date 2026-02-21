@@ -2,30 +2,20 @@
 
 use windows::Storage::Streams::DataReader;
 
-use windows::Win32::System::Com::{
-    CoInitializeEx, CoCreateInstance, COINIT_MULTITHREADED, CLSCTX_INPROC_SERVER
-};
 use windows::Win32::Media::Audio::{
-    eRender, eConsole, IMMDeviceEnumerator, MMDeviceEnumerator, IMMDevice
+    eConsole, eRender, IMMDevice, IMMDeviceEnumerator, MMDeviceEnumerator,
+};
+use windows::Win32::System::Com::{
+    CoCreateInstance, CoInitializeEx, CLSCTX_INPROC_SERVER, COINIT_MULTITHREADED,
 };
 
 use windows::Win32::Media::Audio::Endpoints::IAudioEndpointVolume;
 
-
-const VK_MEDIA_PLAY_PAUSE: u8 = 0xB3;
-const KEYEVENTF_KEYUP: u32 = 0x0002;
-const VK_MEDIA_PREV_TRACK: u8 = 0xB1;
-const VK_MEDIA_NEXT_TRACK: u8 = 0xB0;
-
-use base64::Engine;
 use base64::engine::general_purpose::STANDARD as BASE64;
+use base64::Engine;
 
-use crate::core::media::{
-    MediaSession,
-    PlaybackState,
-    MediaMetadata,
-};
 use super::MediaAdapter;
+use crate::core::media::{MediaMetadata, MediaSession, PlaybackState};
 
 use windows::{
     core::Result as WinResult,
@@ -34,11 +24,6 @@ use windows::{
         GlobalSystemMediaTransportControlsSessionPlaybackStatus,
     },
 };
-
-#[link(name = "user32")]
-extern "system" {
-    fn keybd_event(bVk: u8, bScan: u8, dwFlags: u32, dwExtraInfo: usize);
-}
 
 pub struct WindowsAdapter;
 
@@ -50,8 +35,7 @@ impl WindowsAdapter {
 
 impl MediaAdapter for WindowsAdapter {
     fn get_current_session(&self) -> Result<Option<MediaSession>, String> {
-        let manager = Self::get_manager()
-            .map_err(|e| format!("Manager error: {:?}", e))?;
+        let manager = Self::get_manager().map_err(|e| format!("Manager error: {:?}", e))?;
 
         let session = match manager.GetCurrentSession() {
             Ok(s) => s,
@@ -73,8 +57,12 @@ impl MediaAdapter for WindowsAdapter {
             .map_err(|e| format!("Playback status error: {:?}", e))?;
 
         let state = match status {
-            GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing => PlaybackState::Playing,
-            GlobalSystemMediaTransportControlsSessionPlaybackStatus::Paused => PlaybackState::Paused,
+            GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing => {
+                PlaybackState::Playing
+            }
+            GlobalSystemMediaTransportControlsSessionPlaybackStatus::Paused => {
+                PlaybackState::Paused
+            }
             _ => PlaybackState::Stopped,
         };
 
@@ -107,9 +95,15 @@ impl MediaAdapter for WindowsAdapter {
             .GetTimelineProperties()
             .map_err(|e| format!("Timeline error: {:?}", e))?;
 
-        let start = timeline.StartTime().map_err(|e| format!("{:?}", e))?.Duration;
+        let start = timeline
+            .StartTime()
+            .map_err(|e| format!("{:?}", e))?
+            .Duration;
         let end = timeline.EndTime().map_err(|e| format!("{:?}", e))?.Duration;
-        let position = timeline.Position().map_err(|e| format!("{:?}", e))?.Duration;
+        let position = timeline
+            .Position()
+            .map_err(|e| format!("{:?}", e))?
+            .Duration;
 
         let duration = if end > start { end - start } else { 0 };
 
@@ -132,8 +126,7 @@ impl MediaAdapter for WindowsAdapter {
 
 impl WindowsAdapter {
     pub fn get_artwork(&self) -> Result<Option<String>, String> {
-        let manager = Self::get_manager()
-            .map_err(|e| format!("Manager error: {:?}", e))?;
+        let manager = Self::get_manager().map_err(|e| format!("Manager error: {:?}", e))?;
 
         let session = match manager.GetCurrentSession() {
             Ok(s) => s,
@@ -163,16 +156,18 @@ impl WindowsAdapter {
             return Ok(None);
         }
 
-        let reader = DataReader::CreateDataReader(&stream)
-            .map_err(|e| format!("Reader error: {:?}", e))?;
+        let reader =
+            DataReader::CreateDataReader(&stream).map_err(|e| format!("Reader error: {:?}", e))?;
 
-        reader.LoadAsync(size as u32)
+        reader
+            .LoadAsync(size as u32)
             .map_err(|e| format!("LoadAsync error: {:?}", e))?
             .get()
             .map_err(|e| format!("Load get error: {:?}", e))?;
 
         let mut buffer = vec![0u8; size as usize];
-        reader.ReadBytes(&mut buffer)
+        reader
+            .ReadBytes(&mut buffer)
             .map_err(|e| format!("ReadBytes error: {:?}", e))?;
 
         let encoded = BASE64.encode(buffer);
@@ -182,16 +177,53 @@ impl WindowsAdapter {
 }
 
 impl WindowsAdapter {
-    fn toggle_media_key() {
-        unsafe {
-            keybd_event(VK_MEDIA_PLAY_PAUSE, 0, 0, 0); 
-            keybd_event(VK_MEDIA_PLAY_PAUSE, 0, KEYEVENTF_KEYUP, 0); 
+    pub fn play(&self) -> Result<(), String> {
+        let manager = Self::get_manager().map_err(|e| format!("Manager error: {:?}", e))?;
+        if let Ok(session) = manager.GetCurrentSession() {
+            let _ = session
+                .TryPlayAsync()
+                .map_err(|e| format!("TryPlayAsync error: {:?}", e))?
+                .get();
         }
+        Ok(())
+    }
+
+    pub fn pause(&self) -> Result<(), String> {
+        let manager = Self::get_manager().map_err(|e| format!("Manager error: {:?}", e))?;
+        if let Ok(session) = manager.GetCurrentSession() {
+            let _ = session
+                .TryPauseAsync()
+                .map_err(|e| format!("TryPauseAsync error: {:?}", e))?
+                .get();
+        }
+        Ok(())
+    }
+
+    pub fn previous(&self) -> Result<(), String> {
+        let manager = Self::get_manager().map_err(|e| format!("Manager error: {:?}", e))?;
+        if let Ok(session) = manager.GetCurrentSession() {
+            let _ = session
+                .TrySkipPreviousAsync()
+                .map_err(|e| format!("TrySkipPrevious error: {:?}", e))?
+                .get();
+        }
+        Ok(())
+    }
+
+    pub fn next(&self) -> Result<(), String> {
+        let manager = Self::get_manager().map_err(|e| format!("Manager error: {:?}", e))?;
+        if let Ok(session) = manager.GetCurrentSession() {
+            let _ = session
+                .TrySkipNextAsync()
+                .map_err(|e| format!("TrySkipNext error: {:?}", e))?
+                .get();
+        }
+        Ok(())
     }
 
     pub fn seek_to(&self, position_ms: u64) -> Result<(), String> {
         let manager = Self::get_manager().map_err(|e| format!("Manager error: {:?}", e))?;
-        
+
         let session = match manager.GetCurrentSession() {
             Ok(s) => s,
             Err(_) => return Ok(()),
@@ -209,24 +241,28 @@ impl WindowsAdapter {
 
         let end = match timeline.EndTime() {
             Ok(e) => e.Duration,
-            Err(_) => return Ok(()), 
+            Err(_) => return Ok(()),
         };
 
         let target_seconds = position_ms / 1000;
         let target_ticks = (target_seconds as i64) * 10_000_000;
-        
+
         let mut new_position = start + target_ticks;
 
-        let margin = 10_000_000; 
-        if end > start + (margin * 2) { 
+        let margin = 10_000_000;
+        if end > start + (margin * 2) {
             if new_position > end - margin {
-                new_position = end - margin; 
+                new_position = end - margin;
             } else if new_position < start + margin {
-                new_position = start + margin; 
+                new_position = start + margin;
             }
         } else {
-            if new_position > end { new_position = end; }
-            if new_position < start { new_position = start; }
+            if new_position > end {
+                new_position = end;
+            }
+            if new_position < start {
+                new_position = start;
+            }
         }
 
         let _ = session.TryChangePlaybackPositionAsync(new_position);
@@ -234,63 +270,9 @@ impl WindowsAdapter {
         Ok(())
     }
 
-    pub fn play(&self) -> Result<(), String> {
-        let manager = Self::get_manager().map_err(|e| format!("{:?}", e))?;
-        let session = match manager.GetCurrentSession() {
-            Ok(s) => s,
-            Err(_) => return Ok(()),
-        };
-        
-        let playback_info = session.GetPlaybackInfo().map_err(|e| format!("{:?}", e))?;
-        let status = playback_info.PlaybackStatus().map_err(|e| format!("{:?}", e))?;
-
-        if status != GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing {
-            Self::toggle_media_key();
-        }
-
-        Ok(())
-    }
-
-    pub fn pause(&self) -> Result<(), String> {
-        let manager = Self::get_manager().map_err(|e| format!("{:?}", e))?;
-        let session = match manager.GetCurrentSession() {
-            Ok(s) => s,
-            Err(_) => return Ok(()), 
-        };
-
-        let playback_info = session.GetPlaybackInfo().map_err(|e| format!("{:?}", e))?;
-        let status = playback_info.PlaybackStatus().map_err(|e| format!("{:?}", e))?;
-
-        if status == GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing {
-            Self::toggle_media_key();
-        }
-
-        Ok(())
-    }
-
-    fn previous_media_key() {
-        unsafe {
-            keybd_event(VK_MEDIA_PREV_TRACK, 0, 0, 0); 
-            keybd_event(VK_MEDIA_PREV_TRACK, 0, KEYEVENTF_KEYUP, 0); 
-        }
-    }
-
-    pub fn previous(&self) -> Result<(), String> {
-        let manager = Self::get_manager().map_err(|e| format!("Manager error: {:?}", e))?;
-        
-        let _session = match manager.GetCurrentSession() {
-            Ok(s) => s,
-            Err(_) => return Ok(()), 
-        };
-
-        Self::previous_media_key();
-
-        Ok(())
-    }
-
     pub fn rewind(&self) -> Result<(), String> {
         let manager = Self::get_manager().map_err(|e| format!("Manager error: {:?}", e))?;
-        
+
         let session = match manager.GetCurrentSession() {
             Ok(s) => s,
             Err(_) => return Ok(()), // Sin sesión, salimos limpios
@@ -308,11 +290,11 @@ impl WindowsAdapter {
 
         let start = match timeline.StartTime() {
             Ok(s) => s.Duration,
-            Err(_) => 0, 
+            Err(_) => 0,
         };
 
         let ten_seconds_ticks: i64 = 100_000_000;
-        
+
         let new_position = if position - ten_seconds_ticks < start {
             start
         } else {
@@ -320,7 +302,7 @@ impl WindowsAdapter {
         };
 
         if let Ok(async_op) = session.TryChangePlaybackPositionAsync(new_position) {
-            let _ = async_op.get(); 
+            let _ = async_op.get();
         }
 
         Ok(())
@@ -328,10 +310,10 @@ impl WindowsAdapter {
 
     pub fn fast_forward(&self) -> Result<(), String> {
         let manager = Self::get_manager().map_err(|e| format!("Manager error: {:?}", e))?;
-        
+
         let session = match manager.GetCurrentSession() {
             Ok(s) => s,
-            Err(_) => return Ok(()), 
+            Err(_) => return Ok(()),
         };
 
         let timeline = match session.GetTimelineProperties() {
@@ -346,40 +328,20 @@ impl WindowsAdapter {
 
         let end = match timeline.EndTime() {
             Ok(e) => e.Duration,
-            Err(_) => return Ok(()), 
+            Err(_) => return Ok(()),
         };
 
         let ten_seconds_ticks: i64 = 100_000_000;
-        
+
         let new_position = if position + ten_seconds_ticks > end {
-            end 
+            end
         } else {
             position + ten_seconds_ticks
         };
 
         if let Ok(async_op) = session.TryChangePlaybackPositionAsync(new_position) {
-            let _ = async_op.get(); 
+            let _ = async_op.get();
         }
-
-        Ok(())
-    }
-
-    fn next_media_key() {
-        unsafe {
-            keybd_event(VK_MEDIA_NEXT_TRACK, 0, 0, 0); 
-            keybd_event(VK_MEDIA_NEXT_TRACK, 0, KEYEVENTF_KEYUP, 0); 
-        }
-    }
-
-    pub fn next(&self) -> Result<(), String> {
-        let manager = Self::get_manager().map_err(|e| format!("Manager error: {:?}", e))?;
-        
-        let _session = match manager.GetCurrentSession() {
-            Ok(s) => s,
-            Err(_) => return Ok(()), 
-        };
-
-        Self::next_media_key();
 
         Ok(())
     }
@@ -390,11 +352,9 @@ impl WindowsAdapter {
         unsafe {
             let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
 
-            let enumerator: IMMDeviceEnumerator = CoCreateInstance(
-                &MMDeviceEnumerator,
-                None,
-                CLSCTX_INPROC_SERVER,
-            ).map_err(|e| format!("Error enumerador COM: {:?}", e))?;
+            let enumerator: IMMDeviceEnumerator =
+                CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_INPROC_SERVER)
+                    .map_err(|e| format!("Error enumerador COM: {:?}", e))?;
 
             let device: IMMDevice = enumerator
                 .GetDefaultAudioEndpoint(eRender, eConsole)
@@ -410,10 +370,11 @@ impl WindowsAdapter {
 
     pub fn set_volume(&self, level: f32) -> Result<(), String> {
         let endpoint = Self::get_audio_endpoint()?;
-        let safe_level = level.clamp(0.0, 1.0); 
-        
+        let safe_level = level.clamp(0.0, 1.0);
+
         unsafe {
-            endpoint.SetMasterVolumeLevelScalar(safe_level, std::ptr::null())
+            endpoint
+                .SetMasterVolumeLevelScalar(safe_level, std::ptr::null())
                 .map_err(|e| format!("Error fijando volumen: {:?}", e))?;
         }
         Ok(())
@@ -422,11 +383,11 @@ impl WindowsAdapter {
     pub fn get_volume(&self) -> Result<f32, String> {
         let endpoint = Self::get_audio_endpoint()?;
         unsafe {
-            let level = endpoint.GetMasterVolumeLevelScalar()
+            let level = endpoint
+                .GetMasterVolumeLevelScalar()
                 .map_err(|e| format!("Error leyendo volumen: {:?}", e))?;
-            
+
             Ok(level)
         }
     }
-
 }
