@@ -34,3 +34,14 @@ windows = { version = "0.56", features = [
 ] }
 base64 = "0.22"
 
+# Optimizaciones extremas para el build de producción
+[profile.release]
+panic = "abort" 
+codegen-units = 1 
+lto = true
+opt-level = "s" 
+strip = true
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-autostart = "2"
+

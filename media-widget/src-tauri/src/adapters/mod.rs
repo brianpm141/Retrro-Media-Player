@@ -1,5 +1,4 @@
 #[cfg(target_os = "windows")]
-
 pub mod windows;
 
 use crate::core::media::MediaSession;
