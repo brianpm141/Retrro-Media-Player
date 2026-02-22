@@ -4,18 +4,18 @@ mod core;
 use adapters::windows::WindowsAdapter;
 use adapters::MediaAdapter;
 use core::media::MediaSession;
-use tauri::{Emitter, Manager};
+use tauri::Emitter; // Eliminamos 'Manager' del Módulo 4
 
 use windows::Win32::System::Com::{CoInitializeEx, COINIT_MULTITHREADED};
 
 #[tauri::command]
-fn get_media_state() -> Result<Option<MediaSession>, String> {
+async fn get_media_state() -> Result<Option<MediaSession>, String> {
     let adapter = WindowsAdapter;
     adapter.get_current_session()
 }
 
 #[tauri::command]
-fn get_artwork_only() -> Result<Option<String>, String> {
+async fn get_artwork_only() -> Result<Option<String>, String> {
     let handle = std::thread::spawn(|| {
         let adapter = WindowsAdapter;
         adapter.get_artwork()
@@ -90,22 +90,16 @@ pub fn run() {
 
             std::thread::spawn(move || {
                 unsafe {
+                    // Solo el hilo de fondo inicializa COM
                     let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
                 }
 
                 let adapter = WindowsAdapter;
 
                 loop {
-                    match adapter.get_current_session() {
-                        Ok(Some(session)) => {
-                            let _ = app_handle.emit("media-update", &session);
-                        }
-                        Ok(None) => {}
-                        Err(e) => {
-                            eprintln!("[RUST ERROR FATAL] {}", e);
-                        }
+                    if let Ok(Some(session)) = adapter.get_current_session() {
+                        let _ = app_handle.emit("media-update", &session);
                     }
-
                     std::thread::sleep(std::time::Duration::from_millis(500));
                 }
             });

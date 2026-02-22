@@ -139,13 +139,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     listen("media-update", (event: any) => {
         handleMediaUpdate(event.payload);
     }).catch(err => console.error("[TS] Error al iniciar el listener:", err)); 
-    
-    invoke("get_media_state").then((state: any) => {
-        if (state) handleMediaUpdate(state);
-    }).catch(err => console.error("[TS] Error pidiendo estado inicial:", err));
-
-    requestAnimationFrame(animateSeek);
-    
+        
     requestAnimationFrame(animateSeek);
 
     if (playBtn) {
