@@ -1,5 +1,6 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 
 let lastTitle: string | null = null;
 let lastArtwork: string | null = null;
@@ -135,22 +136,31 @@ window.addEventListener("DOMContentLoaded", async () => {
     await win.close();
   });
 
-  setInterval(updateMedia, 1000);
-  requestAnimationFrame(animateSeek);
+    listen("media-update", (event: any) => {
+        handleMediaUpdate(event.payload);
+    }).catch(err => console.error("[TS] Error al iniciar el listener:", err)); 
+    
+    invoke("get_media_state").then((state: any) => {
+        if (state) handleMediaUpdate(state);
+    }).catch(err => console.error("[TS] Error pidiendo estado inicial:", err));
 
+    requestAnimationFrame(animateSeek);
+    
+    requestAnimationFrame(animateSeek);
 
-  if (playBtn) {
-        playBtn.addEventListener('click', (e) => {
-            e.preventDefault(); 
-            if (isCommandPending) return;
-            isCommandPending = true;
-            isPlaying = true; 
-            playbackStartTime = Date.now(); 
+    if (playBtn) {
+            playBtn.addEventListener('click', (e) => {
+                e.preventDefault(); 
+                if (isCommandPending) return;
+                isCommandPending = true;
+                isPlaying = true; 
+                playbackStartTime = Date.now(); 
 
-            invoke('play_media').catch(err => console.error("[TS ERROR] Fallo IPC:", err));
-            setTimeout(() => { isCommandPending = false; updateMedia(); }, 500); 
-        });
-    }
+                invoke('play_media').catch(err => console.error("[TS ERROR] Fallo IPC:", err));
+                
+                setTimeout(() => { isCommandPending = false; }, 500); 
+            });
+        }
 
     if (pauseBtn) {
         pauseBtn.addEventListener('click', (e) => {
@@ -161,7 +171,8 @@ window.addEventListener("DOMContentLoaded", async () => {
             playbackOffset += (Date.now() - playbackStartTime); 
 
             invoke('pause_media').catch(err => console.error("[TS ERROR] Fallo IPC:", err));
-            setTimeout(() => { isCommandPending = false; updateMedia(); }, 500);
+            setTimeout(() => { isCommandPending = false; }, 500); 
+
         });
     }
 
@@ -174,7 +185,8 @@ window.addEventListener("DOMContentLoaded", async () => {
             playbackOffset += (Date.now() - playbackStartTime);
 
             invoke('pause_media').catch(err => console.error("[TS ERROR] Fallo IPC:", err));
-            setTimeout(() => { isCommandPending = false; updateMedia(); }, 500);
+            setTimeout(() => { isCommandPending = false; }, 500); 
+
         });
     }
 
@@ -185,7 +197,8 @@ window.addEventListener("DOMContentLoaded", async () => {
             isCommandPending = true;
 
             invoke('previous_media').catch(err => console.error("[TS ERROR] Fallo IPC (Previous):", err));
-            setTimeout(() => { isCommandPending = false; updateMedia(); }, 500);
+            setTimeout(() => { isCommandPending = false; }, 500); 
+
         });
     }
 
@@ -196,7 +209,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             isCommandPending = true;
 
             invoke('rewind_media').catch(err => console.error("[TS ERROR] Fallo IPC (Rewind):", err));
-            setTimeout(() => { isCommandPending = false; updateMedia(); }, 500);
+            setTimeout(() => { isCommandPending = false; }, 500); 
         });
     }
 
@@ -207,7 +220,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             isCommandPending = true;
 
             invoke('fast_forward_media').catch(err => console.error("[TS ERROR] Fallo IPC (Fast Forward):", err));
-            setTimeout(() => { isCommandPending = false; updateMedia(); }, 500);
+            setTimeout(() => { isCommandPending = false; }, 500); 
         });
     }
 
@@ -218,7 +231,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             isCommandPending = true;
 
             invoke('next_media').catch(err => console.error("[TS ERROR] Fallo IPC (Next):", err));
-            setTimeout(() => { isCommandPending = false; updateMedia(); }, 500);
+            setTimeout(() => { isCommandPending = false; }, 500); 
         });
     }
 
@@ -240,17 +253,12 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             if (seekTimeout) clearTimeout(seekTimeout);
 
-            // ¡Silenciamos updateMedia() para que el OS respire!
             isCommandPending = true;
 
             seekTimeout = window.setTimeout(() => {
                 invoke('seek_media', { positionMs: newPositionMs })
                     .then(() => {
-                        // Le damos 500ms al SO para estabilizar antes de consultar de nuevo
-                        setTimeout(() => {
-                            isCommandPending = false;
-                            updateMedia();
-                        }, 500);
+                    setTimeout(() => { isCommandPending = false; }, 500); 
                     })
                     .catch(err => {
                         console.error("[TS ERROR] Fallo IPC (Seek):", err);
@@ -261,11 +269,10 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 });
 
-async function updateMedia() {
+async function handleMediaUpdate(state: any) {
   if (isCommandPending) return;
 
   try {
-    const state: any = await invoke("get_media_state");
     if (!state || !state.metadata) return;
 
     const metadata = state.metadata;
@@ -289,7 +296,7 @@ async function updateMedia() {
     if (metadata.title && metadata.title !== lastTitle) {
       lastTitle = metadata.title;
       durationMs = metadata.duration_ms || 0;
-      await loadArtwork();
+      await loadArtwork(); // Mantenemos el artwork bajo demanda para no saturar la red local
     }
 
     const showEl = document.getElementById("meta-show");
@@ -347,3 +354,4 @@ async function loadArtwork() {
     console.error("Artwork load error:", e);
   }
 }
+

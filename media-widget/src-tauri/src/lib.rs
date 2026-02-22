@@ -1,9 +1,12 @@
-mod core;
 mod adapters;
+mod core;
 
 use adapters::windows::WindowsAdapter;
 use adapters::MediaAdapter;
 use core::media::MediaSession;
+use tauri::{Emitter, Manager};
+
+use windows::Win32::System::Com::{CoInitializeEx, COINIT_MULTITHREADED};
 
 #[tauri::command]
 fn get_media_state() -> Result<Option<MediaSession>, String> {
@@ -82,11 +85,38 @@ async fn get_volume() -> Result<f32, String> {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .setup(|app| {
+            let app_handle = app.handle().clone();
+
+            std::thread::spawn(move || {
+                unsafe {
+                    let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
+                }
+
+                let adapter = WindowsAdapter;
+
+                loop {
+                    match adapter.get_current_session() {
+                        Ok(Some(session)) => {
+                            let _ = app_handle.emit("media-update", &session);
+                        }
+                        Ok(None) => {}
+                        Err(e) => {
+                            eprintln!("[RUST ERROR FATAL] {}", e);
+                        }
+                    }
+
+                    std::thread::sleep(std::time::Duration::from_millis(500));
+                }
+            });
+
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             get_media_state,
             get_artwork_only,
             seek_media,
-            play_media,   
+            play_media,
             pause_media,
             previous_media,
             rewind_media,

@@ -275,7 +275,7 @@ impl WindowsAdapter {
 
         let session = match manager.GetCurrentSession() {
             Ok(s) => s,
-            Err(_) => return Ok(()), // Sin sesión, salimos limpios
+            Err(_) => return Ok(()),
         };
 
         let timeline = match session.GetTimelineProperties() {
