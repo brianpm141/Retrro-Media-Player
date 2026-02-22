@@ -4,7 +4,7 @@ mod core;
 use adapters::windows::WindowsAdapter;
 use adapters::MediaAdapter;
 use core::media::MediaSession;
-use tauri::Emitter; // Eliminamos 'Manager' del Módulo 4
+use tauri::Emitter;
 
 use windows::Win32::System::Com::{CoInitializeEx, COINIT_MULTITHREADED};
 
@@ -84,14 +84,19 @@ async fn get_volume() -> Result<f32, String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_autostart::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            Some(vec![]),
+        ))
         .setup(|app| {
             let app_handle = app.handle().clone();
 
+            use tauri_plugin_autostart::ManagerExt;
+            let _ = app.autolaunch().enable();
+
             std::thread::spawn(move || {
                 unsafe {
-                    // Solo el hilo de fondo inicializa COM
                     let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
                 }
 
