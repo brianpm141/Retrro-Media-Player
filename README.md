@@ -31,10 +31,20 @@ Aquí puedes ver cómo luce el widget controlando diferentes aplicaciones:
 | ![Spotify View](Capturas/capSpoty.png) | ![YouTube View](Capturas/capYoutu.png) | ![General View](Capturas/captura.png) |
 
 ## Instalación (Pendiente)
-> [!NOTE]
-> Los métodos de instalación para el usuario final están actualmente en desarrollo. Pronto estarán disponibles los ejecutables (.exe).
 
-## Instalación del Proyecto para Editarlo
+### Windows
+
+Puedes descargar el archivo de instalación que se encuentra en la carpeta de ejecutables.
+
+```
+Ejecutable\Retro Media Player_0.1.0
+```
+
+
+> [!NOTE]
+> Estamos trabajando en las versiones de Linux y MacOS
+
+## Ejecutar el proyecto
 Si deseas modificar el código o ejecutarlo en modo desarrollo, sigue estos pasos:
 
 ### Requisitos Previos
@@ -61,9 +71,4 @@ Si deseas modificar el código o ejecutarlo en modo desarrollo, sigue estos paso
 4. **Ejecutar en modo desarrollo**:
    ```bash
    npm run tauri dev
-   ```
-
-5. **Construir el proyecto**:
-   ```bash
-   npm run tauri build
    ```

@@ -40,9 +40,7 @@
     "windows" : {
       "nsis" : {
         "installMode": "currentUser",
-        "installerIcon": "icons/icon.ico",
-        "headerImage": "icons/RetroMediaLogo.bmp",
-        "sidebarImage": "icons/RetroMediaLogo.bmp"
+        "installerIcon": "icons/icon.ico"
       }
     }
   }
